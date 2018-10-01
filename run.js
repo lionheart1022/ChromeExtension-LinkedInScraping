@@ -7,6 +7,7 @@ var savedDetails = {};
 var email = "";
 var SearchDescription = "";
 
+
 function start() {
     stopping = false;
     $('#extractor-start-button').text('Stop');
@@ -16,51 +17,53 @@ function start() {
 function stop() {
     stopping = true;
     $('#extractor-start-button').text('Start');
-    console.log('stop');
+    //console.log('stop');
     for (var i = 0; i < intervals.length; i++) {
         clearInterval(intervals[i]);
     }
 }
 
+
+
 function startVisiting(i) {
+function getSearchRowResults() {
+    //console.log('waited three seconds to try again')
+    }
 
     if (stopping) {
         stop();
         return;
     }
-    console.log('step1');
     var visited1 = parseInt($('#extractor-visited').text());
     if (savedDetails.COUNT != "" && parseInt(savedDetails.COUNT) > 0 && visited1 >= savedDetails.COUNT) {
         stop();
         return;
     }
     var peopleRows = $('li.search-results__result-item');
-    console.log('step2');
-    console.log(peopleRows);
-    console.log(i);
+    peopleRows[i].scrollIntoView(false);
     var personRow = peopleRows[i];
-    console.log('step3');
-    console.log(personRow);
-    var personTitle = $(personRow).find('result-lockup__name');
-    console.log('step4');
-    console.log(personTitle);
+    var personTitle = $(personRow).find('.result-lockup__name');
     var personViewed = '';
     var Viewed = $('li.search-results__result-item.viewed');
-    console.log(Viewed);
-    if (personRow != undefined) {
-        personViewed = personRow.className
-        console.log('personViewed');
-        console.log(personViewed);
-    }
+
+
+//console.log(personRow);
+//console.log(personTitle);
+//console.log(personRow && personTitle);
+    
     if (personRow && personTitle) {
+        var nowText = $(personTitle).first().find('a').text();
+        if (nowText == '') {
         var nowText = $(personTitle).text();
-        //console.log(nowText);
-        var personLink = "https://linkedin.com" + $(personTitle).attr('href');
+        }
+         //console.log(nowText);
+        var personLink = "https://linkedin.com" + $(personTitle).first().find('a').attr('href');
 
         i++;
 
         //dont visit again if already visited
         if (!personLink || nowText.indexOf('LinkedIn Member') > -1 || nowText.indexOf('(Next To Visit)') > -1 || nowText.indexOf('(Visited)') > -1 || nowText.indexOf('(Skipped)') > -1) {
+            //console.log('startvisiting');
             startVisiting(i);
 
             if (nowText.indexOf('(Skipped)') === -1) {
@@ -69,8 +72,8 @@ function startVisiting(i) {
             }
             return;
         }
-
-
+//console.log('Mark1')
+//console.log(nowText)
         nowText += " (Next To Visit)";
         $(personTitle).text(nowText);
 
@@ -93,63 +96,10 @@ function startVisiting(i) {
                     clearInterval(intervals[intervalIndex]);
                     intervals.splice(intervalIndex, 1);
                 }
-                //console.log(personLink);
-                visitPerson(personLink, function(profileDetails) {
-                    if (profileDetails !== undefined) {
-                        //console.log(profileDetails);
-                        saveOrPrint(profileDetails);
-                        //stop();
-                        //return;
-                    }
-                    //saveOrPrint(profileDetails);
-
-                    var visited = parseInt($('#extractor-visited').text());
-                    visited++;
-                    $('#extractor-visited').text(visited);
-
-                    if (nowText.indexOf('(Visited)') === -1) {
-                        nowText = nowText.replace('(Next To Visit)', '(Visited)');
-                        $(personTitle).text(nowText);
-                    }
-                    startVisiting(i);
-                    return;
-                });
-            }
-        }, 1000);
-
-        intervals.push(interval);
-
-    } else {
-        var next = $('a.page-link.next-pagination');
-
-        if (next && next[0]) {
-            next[0].click();
-
-            setTimeout(function() {
-                startVisiting(0);
-            }, 4000);
-        } else {
-            stop();
-        }
-    }
-}
-
-function findElementInArrayById(arr, elid) {
-    for (var i = 0; i < arr.length; i++) {
-        var el = arr[i];
-        if (el.id === elid) {
-            return el;
-        }
-    }
-    return undefined;
-}
-
-function visitPerson(link, completed, counter) {
-    console.log('visitperson');
-    try {
-        if (!counter || counter < 3) {
-            // CODE
-            $.get(link, function(data) {
+//console.log('Visit profile');
+                //visitPerson(personLink, function(profileDetails) {
+                var link=personLink
+                $.get(link, function(data) {
 
                 var startstringsearch = data.indexOf('{&quot;lastName&quot;:&quot');
                 var positionofstartofurl = data.indexOf('{&quot;lastName&quot;:&quot', startstringsearch);
@@ -157,37 +107,16 @@ function visitPerson(link, completed, counter) {
                 var json_text = data.substring(positionofstartofurl, positionofendofurl);
                 var email = fetchMail(data)
 
-                //var html = $.parseHTML(data);
-
-                //var json_element = findElementInArrayById(html, 'body');
-                //if (json_element === undefined) {
-                //   console.log(json_element);
-                //   completed(undefined);
-                //   return;
-                //}
-
-                //var json_text = $(json_element).find('#streamed-content-content').html();
-                //if (json_text === undefined) {console.log(json_element);}
                 if (json_text !== undefined) {
                     //json_text = json_text.replace("<!--", "").replace("-->", "");
 
                     json_text = json_text.replace(/&quot;/g, '"');
                     json_text = json_text.replace(/&#92;"/g, '/');
-                    console.log(json_text);
-                    //lastname
-                    //var startstringsearch = json_text.indexOf('"lastName":"');
-                    //var positionofstartofurl = 12+startstringsearch;
-                    //var positionofendofurl = json_text.indexOf('"',positionofstartofurl);
-                    //var lastname = json_text.substring(positionofstartofurl, positionofendofurl);
-                    //fullname
-                    //headline
-                    //locality
-                    //industry
-                    //firstname
-                    //interests		
+                    //console.log(json_text);
+
                     try {
                         var json_obj = JSON.parse(json_text);
-                        console.log(json_obj);
+                        //console.log(json_obj);
                     } catch (err) {
                         console.log(err);
                         completed(profileDetails);
@@ -195,7 +124,6 @@ function visitPerson(link, completed, counter) {
                     }
 
                 }
-
 
                 var name = '',
                     headline = '',
@@ -229,21 +157,22 @@ function visitPerson(link, completed, counter) {
 
                 if (json_obj !== undefined) {
                     name = json_obj.fullName || '';
+                    firstName = json_obj.firstName || '';
+                    lastName = json_obj.lastName || '';
+                    title = json_obj.positions[0].title || '';
                     headline = json_obj.headline || '';
                     locality = json_obj.location || '';
                     industry = json_obj.industry || '';
                     link1 = json_obj.flagshipProfileUrl || '';
-                    firstName = json_obj.firstName || '';
-                    lastName = json_obj.lastName || '';
                     interests = json_obj.interests || '';
-                    summary = json_obj.summary
+                    summary = json_obj.summary || '';
                     connections = json_obj.numOfConnections || '';
+
                     if (json_obj.positions !== undefined) {
                         currentCompanyName = json_obj.positions[0].companyName || '';
-                        title = json_obj.positions[0].title || '';
                     }
-                    Field19 = '"numOfSharedConnections" : "' + json_obj.numOfSharedConnections + '",' || '';
-                    Field19 = Field19 + JSON.stringify(json_obj.memberBadges) || '';
+
+                    Field19 = link;
 
                     searchdescription = SearchDescription || '';
 
@@ -265,65 +194,94 @@ function visitPerson(link, completed, counter) {
 
                     }
 
-
-                    var skills_array = json_obj.skills || undefined;
-                    if (skills_array !== undefined)
-                        skills = skills_array.join(', ');
-
-
-                    //if (json_obj.relatedColleagueCompanyId !== undefined) {
-
                     if (json_obj.relatedColleagueCompanyId !== undefined) {
 
                         currentCompanyID = json_obj.relatedColleagueCompanyId || '';
-                        //currentCompanyName = json_obj.currentPosition.position.companyName || '';
-                        if (currentCompanyID != '')
-                            //currentCompanyLink = 'https://www.linkedin.com/sales/accounts/insights?companyId=' + currentCompanyID;
-                            currentCompanyLink = 'https://www.linkedin.com/company/' + currentCompanyID;
-                        //currentCompanyStart = json_obj.currentPosition.position.formattedStartMonthYear || '';
-                        //title = json_obj.currentPosition.position.title || '';
 
+                        if (currentCompanyID != '')
+                            currentCompanyLink = 'https://www.linkedin.com/company/' + currentCompanyID;
                     }
-                    //}
 
                     if (json_obj.educations[0] !== undefined) {
 
                         education = json_obj.educations[0].schoolName || '';
+                        contactComments = json_obj.educations[0].degree + ', ' + json_obj.educations[0].fieldsOfStudy || '';
+                        contactComments = contactComments.replace(/&#39;/g, "'");
 
                     }
                 }
-
 
                 var profileDetails = {
                     name: name,
                     firstName: firstName,
                     lastName: lastName,
                     Title: title,
-                    email: email,
-                    email1: email1,
-                    phone: phone,
                     headline: headline,
                     locality: locality,
                     industry: industry,
                     currentCompanies: currentCompanyName,
+                    contactComments: contactComments,
                     currentCompanyProfile: currentCompanyLink,
-                    currentCompanyStart: currentCompanyStart,
                     education: education,
-                    connections: connections,
                     skills: skills,
-                    interests: interests,
                     link: link1,
                     companyWebsite: companyWebsite,
-                    companyType: companyType,
-                    headQuaters: headQuaters,
-                    summary: summary,
-                    companySize: companySize,
-                    companyFounded: companyFounded,
                     Field19: Field19,
                     SearchDescription: SearchDescription,
-                    twitter: twitter
+                    summary: summary,
+                    companySize: companySize
                 };
-                console.log(currentCompanyLink);
+
+                var skills_array = [];
+
+                $.ajax({
+                    url: link1,
+                    type: 'get',
+                    timeout: 10000,
+                    error: function(err) {}
+                }).done(function(data) {
+                    try {
+                        var startstringsearch = data.indexOf('{&quot;$deletedFields&quot;:[&quot;standardizedSkillUrn');
+                        var positionofstartofurl = data.indexOf('{&quot;$deletedFields&quot;:[&quot;standardizedSkillUrn', startstringsearch);
+                        var positionofendofurl = data.indexOf('profile.SkillView&quot;}', positionofstartofurl);
+                        var profile_data = data.substring(positionofstartofurl, positionofendofurl);
+
+                        if (profile_data !== undefined) {
+
+                            profile_data = profile_data.replace(/&quot;/g, '"');
+                            profile_data = profile_data.replace(/&#92;"/g, '/');
+
+                            try {
+                                var profile_obj = JSON.parse('[' + profile_data + '"}]');
+
+                                profile_obj.pop();
+                                profile_obj.forEach(function(element) {
+                                    skills_array.push(element.name);
+                                });
+                            } catch (err) {}
+                        }
+                        profileDetails.skills = skills_array.join(', ');
+                        
+                        var startsummarysearch = data.indexOf('&quot;summary&quot;:');
+                        var positionofstartofsummary = data.indexOf('&quot;summary&quot;:', startsummarysearch);
+                        var positionofendofsummary = data.indexOf(',&quot;industryName&quot;', positionofstartofsummary);
+                        var summary_data = data.substring(positionofstartofsummary, positionofendofsummary);
+                        
+                        if (summary_data !== undefined) {
+
+                            summary_data = summary_data.replace(/&quot;/g, '"');
+                            summary_data = summary_data.replace(/&#92;"/g, '/');
+                            
+                            var summary_obj = JSON.parse('{' + summary_data + '}');
+                            profileDetails.summary = summary_obj.summary;                            
+                        }
+                        else {
+                        profileDetails.summary=''
+                        }
+                        
+                        return;
+                    } catch (e) {}
+                });
                 if (currentCompanyLink === '') {
                     completed(profileDetails);
                     return;
@@ -335,36 +293,344 @@ function visitPerson(link, completed, counter) {
                         error: function(err) {}
                     }).done(function(data) {
                         try {
-                            var startstringsearch = data.indexOf('companyPageUrl');
+                            var startstringsearch = data.indexOf('&quot;companyPageUrl&quot;');
                             var positionofstartofurl = data.indexOf('http', startstringsearch);
-                            var positionofendofurl = data.indexOf('&quot', positionofstartofurl);
+                            var positionofendofurl = data.indexOf('&quot;,', positionofstartofurl);
                             var companyurl = data.substring(positionofstartofurl, positionofendofurl);
-
 
                             if (positionofstartofurl === -1) {
                                 completed(profileDetails);
                                 return;
                             }
 
+                            var positionstart = data.indexOf('{&quot;$deletedFields&quot;:[],&quot;start&quot;:', startstringsearch);
+                            
+                            if(positionstart === -1) {
+                                positionstart = data.indexOf('{&quot;$deletedFields&quot;:[&quot;end&quot;],&quot;start&quot;:', startstringsearch);
+                            }
+                            var positionend = data.indexOf(',&quot;$type&quot;', positionstart);
+                            var companyRange = data.substring(positionstart, positionend) + '}';
+                            companyRange = companyRange.replace(/&quot;/g, '"');
+                            companyRange = JSON.parse(companyRange);
+
                             profileDetails.companyWebsite = companyurl || '';
-                            //profileDetails.companySize = json_obj.account.fmtSize || '';
-                            console.log(profileDetails.companyWebsite);
+                            
+                            if(companyRange.end) {
+                                profileDetails.companySize = companyRange.start + '-' + companyRange.end + ' employees' || '';
+                            }
+                            else {
+                                profileDetails.companySize = companyRange.start + '+' + ' employees' || '';
+                            }
+
+                            completed(profileDetails);
+                            debugger;
+                            return;
+                        } catch (e) {}
+                    });
+                }
+
+                //console.log(profileDetails); 
+                debugger; 
+                saveOrPrint(profileDetails);                          
+               //debugger;
+            });
+            //console.log('Dont stop here');
+
+                    var visited = parseInt($('#extractor-visited').text());
+                    visited++;
+                    $('#extractor-visited').text(visited);
+//console.log('Mark 2')
+                    if (nowText.indexOf('(Visited)') === -1) {
+                        nowText = nowText.replace('(Next To Visit)', '(Visited)');
+                        $(personTitle).text(nowText);
+                    }
+                    startVisiting(i);
+                    return;
+                //});
+            }
+        }, 1000);
+
+        intervals.push(interval);
+
+    } else {
+//console.log('Next');
+        var next = $('.search-results__pagination-next-button');
+
+        if (next && next[0]) {
+            next[0].click();
+
+            setTimeout(function() {
+                startVisiting(0);
+            }, 4000);
+        } else {
+            stop();
+        }
+    }
+}
+
+function findElementInArrayById(arr, elid) {
+    for (var i = 0; i < arr.length; i++) {
+        var el = arr[i];
+        if (el.id === elid) {
+            return el;
+        }
+    }
+    return undefined;
+}
+
+
+function visitPerson(link, completed, counter) {
+    //console.log('visitperson');
+    try {
+        if (!counter || counter < 3) {
+            // CODE
+            $.get(link, function(data) {
+
+                var startstringsearch = data.indexOf('{&quot;lastName&quot;:&quot');
+                var positionofstartofurl = data.indexOf('{&quot;lastName&quot;:&quot', startstringsearch);
+                var positionofendofurl = data.indexOf('</code>', positionofstartofurl);
+                var json_text = data.substring(positionofstartofurl, positionofendofurl);
+                var email = fetchMail(data)
+
+                if (json_text !== undefined) {
+                    //json_text = json_text.replace("<!--", "").replace("-->", "");
+
+                    json_text = json_text.replace(/&quot;/g, '"');
+                    json_text = json_text.replace(/&#92;"/g, '/');
+                    //console.log(json_text);
+
+                    try {
+                        var json_obj = JSON.parse(json_text);
+                        //console.log(json_obj);
+                    } catch (err) {
+                        console.log(err);
+                        completed(profileDetails);
+                        return;
+                    }
+
+                }
+
+                var name = '',
+                    headline = '',
+                    locality = '';
+                var industry = '',
+                    twitter = '',
+                    currentCompanyID = '';
+                var currentCompanyName = '',
+                    currentCompanyLink = '';
+                var currentCompanyStart = '',
+                    firstName = '',
+                    lastName = '';
+                var education = '',
+                    connections = '',
+                    skills = '';
+                var email = '',
+                    email1 = '',
+                    phone = '',
+                    interests = '';
+                var link1 = '',
+                    companyWebsite = '',
+                    companyType = "";
+                var headQuaters = "",
+                    companySize = "",
+                    companyFounded = "";
+                var title = '',
+                    searchdescription = '',
+                    Field19 = '';
+                var summary = '';
+
+
+                if (json_obj !== undefined) {
+                    name = json_obj.fullName || '';
+                    firstName = json_obj.firstName || '';
+                    lastName = json_obj.lastName || '';
+                    title = json_obj.positions[0].title || '';
+                    headline = json_obj.headline || '';
+                    locality = json_obj.location || '';
+                    industry = json_obj.industry || '';
+                    link1 = json_obj.flagshipProfileUrl || '';
+                    interests = json_obj.interests || '';
+                    summary = json_obj.summary || '';
+                    connections = json_obj.numOfConnections || '';
+
+                    if (json_obj.positions !== undefined) {
+                        currentCompanyName = json_obj.positions[0].companyName || '';
+                    }
+
+                    Field19 = link;
+
+                    searchdescription = SearchDescription || '';
+
+                    if (json_obj.contactInfo !== undefined) {
+
+                        var twitter_array = json_obj.contactInfo.twitterAccounts || undefined;
+                        if (twitter_array !== undefined)
+                            twitter = twitter_array.join(', ');
+
+                        var mail_array = json_obj.contactInfo.emails || undefined;
+                        if (mail_array !== undefined)
+                            email = mail_array.join('; ');
+
+                        var phone_array = json_obj.contactInfo.phones || undefined;
+                        if (phone_array !== undefined)
+                            phone = phone_array.join(', ');
+
+                        link = json_obj.contactInfo.publicProfileUrl || '';
+
+                    }
+
+                    if (json_obj.relatedColleagueCompanyId !== undefined) {
+
+                        currentCompanyID = json_obj.relatedColleagueCompanyId || '';
+
+                        if (currentCompanyID != '')
+                            currentCompanyLink = 'https://www.linkedin.com/company/' + currentCompanyID;
+                    }
+
+                    if (json_obj.educations[0] !== undefined) {
+
+                        education = json_obj.educations[0].schoolName || '';
+                        contactComments = json_obj.educations[0].degree + ', ' + json_obj.educations[0].fieldsOfStudy || '';
+                        contactComments = contactComments.replace(/&#39;/g, "'");
+
+                    }
+                }
+
+                var profileDetails = {
+                    name: name,
+                    firstName: firstName,
+                    lastName: lastName,
+                    Title: title,
+                    headline: headline,
+                    locality: locality,
+                    industry: industry,
+                    currentCompanies: currentCompanyName,
+                    contactComments: contactComments,
+                    currentCompanyProfile: currentCompanyLink,
+                    education: education,
+                    skills: skills,
+                    link: link1,
+                    companyWebsite: companyWebsite,
+                    Field19: Field19,
+                    SearchDescription: SearchDescription,
+                    summary: summary,
+                    companySize: companySize
+                };
+
+                var skills_array = [];
+
+                $.ajax({
+                    url: link1,
+                    type: 'get',
+                    timeout: 10000,
+                    error: function(err) {}
+                }).done(function(data) {
+                    try {
+                        var startstringsearch = data.indexOf('{&quot;$deletedFields&quot;:[&quot;standardizedSkillUrn');
+                        var positionofstartofurl = data.indexOf('{&quot;$deletedFields&quot;:[&quot;standardizedSkillUrn', startstringsearch);
+                        var positionofendofurl = data.indexOf('profile.SkillView&quot;}', positionofstartofurl);
+                        var profile_data = data.substring(positionofstartofurl, positionofendofurl);
+
+                        if (profile_data !== undefined) {
+
+                            profile_data = profile_data.replace(/&quot;/g, '"');
+                            profile_data = profile_data.replace(/&#92;"/g, '/');
+
+                            try {
+                                var profile_obj = JSON.parse('[' + profile_data + '"}]');
+
+                                profile_obj.pop();
+                                profile_obj.forEach(function(element) {
+                                    skills_array.push(element.name);
+                                });
+                            } catch (err) {}
+                        }
+                        profileDetails.skills = skills_array.join(', ');
+                        
+                        var startsummarysearch = data.indexOf('&quot;summary&quot;:');
+                        var positionofstartofsummary = data.indexOf('&quot;summary&quot;:', startsummarysearch);
+                        var positionofendofsummary = data.indexOf(',&quot;industryName&quot;', positionofstartofsummary);
+                        var summary_data = data.substring(positionofstartofsummary, positionofendofsummary);
+                        
+                        if (summary_data !== undefined) {
+
+                            summary_data = summary_data.replace(/&quot;/g, '"');
+                            summary_data = summary_data.replace(/&#92;"/g, '/');
+                            
+                            var summary_obj = JSON.parse('{' + summary_data + '}');
+                            profileDetails.summary = summary_obj.summary;                            
+                        }
+                        else {
+                        profileDetails.summary=''
+                        }
+                        
+                        return;
+                    } catch (e) {}
+                });
+
+                if (currentCompanyLink === '') {
+                    completed(profileDetails);
+                    return;
+                } else {
+                    $.ajax({
+                        url: currentCompanyLink,
+                        type: 'get',
+                        timeout: 10000,
+                        error: function(err) {}
+                    }).done(function(data) {
+                        try {
+                            var startstringsearch = data.indexOf('&quot;companyPageUrl&quot;');
+                            var positionofstartofurl = data.indexOf('http', startstringsearch);
+                            var positionofendofurl = data.indexOf('&quot;,', positionofstartofurl);
+                            var companyurl = data.substring(positionofstartofurl, positionofendofurl);
+
+                            if (positionofstartofurl === -1) {
+                                completed(profileDetails);
+                                return;
+                            }
+
+                            var positionstart = data.indexOf('{&quot;$deletedFields&quot;:[],&quot;start&quot;:', startstringsearch);
+                            
+                            if(positionstart === -1) {
+                                positionstart = data.indexOf('{&quot;$deletedFields&quot;:[&quot;end&quot;],&quot;start&quot;:', startstringsearch);
+                            }
+                            var positionend = data.indexOf(',&quot;$type&quot;', positionstart);
+                            var companyRange = data.substring(positionstart, positionend) + '}';
+                            companyRange = companyRange.replace(/&quot;/g, '"');
+                            companyRange = JSON.parse(companyRange);
+
+                            profileDetails.companyWebsite = companyurl || '';
+                            
+                            if(companyRange.end) {
+                                profileDetails.companySize = companyRange.start + '-' + companyRange.end + ' employees' || '';
+                            }
+                            else {
+                                profileDetails.companySize = companyRange.start + '+' + ' employees' || '';
+                            }
 
                             completed(profileDetails);
                             return;
                         } catch (e) {}
                     });
                 }
+
+                //console.log(profileDetails);  
+                saveOrPrint(profileDetails);                          
+               debugger;
             });
+            //console.log('Dont stop here');
         } else {
             console.log('sorry, person with link was not loaded (after 3 attempts) ' + link);
         }
     } catch (err) {
+        console.log(err);
         var i = 0;
         if (counter) {
             i = counter + 1;
         } else i = 0;
+        //console.log('Mark 3')
         setTimeout(visitPerson(link, completed, i), 5000);
+        //console.log('Mark 4')
         if (counter == 2) {
             console.log('error: ' + err);
         }
@@ -378,7 +644,6 @@ function saveOrPrint(details) {
         var detail = jQuery.param(details);
         if (API) {
             try {
-                console.log('try');
                 $.ajax({
                     url: API,
                     type: 'POST',
@@ -407,7 +672,7 @@ function saveOrPrint(details) {
                         "X-XSS-Protection": "1; mode=block"
                     },
                     success: function(returned) {
-                        console.log('success');
+                        //console.log('success');
                     },
                     error: function(err) {}
                 })
@@ -437,6 +702,7 @@ function detect_element(elem, root, callback) {
 }
 
 function initialize(complete) {
+    
     chrome.runtime.sendMessage({
         'message': 'load'
     }, function(returnedDetails) {
@@ -466,7 +732,6 @@ function initialize(complete) {
                 // event handlers
                 $(bodyElement).on('click', '#extractor-start-button', function() {
                     var text = $(this).text();
-                    console.log(text);
                     if (text == 'Start') {
                         start();
                     } else {
